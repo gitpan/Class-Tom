@@ -1,0 +1,17 @@
+Artistic			Artistic License
+CHANGES				Changes Log
+INSTALL				Installation Instructions
+MANIFEST			This file
+Makefile.PL			MakeMaker file
+README				Please do so
+Class/Tom.pm			Basic module
+Class/Tom/demand.pm		require like demand statement.
+Class/Tom/use.pm		provides a 'use' like module
+test.pl				Test suite
+NOTES				Some hints for use and notes to myself
+SECURITY			A bit of a document outlining TOM's security.
+MODULES				Outline of modules you will need.
+Examples/Safe.pl		Example of using a safe compartment.
+Examples/DemoSTART.pl		The first part of a our new 2-part Demo
+Examples/DemoEND.pl		Part two of the exciting demo, Demo!
+Examples/README			Instructions on how to use the demo.

@@ -1,0 +1,12 @@
+When TOM is used without Safe, there is no security. It is probably possible 
+to breach any defense that you might attempt to put up. However,  when TOM is 
+put into Safe mode it relies strictly on the security provided by the Safe
+module.  If Safe is insecure, TOM is as well.  If Safe is secure, TOM
+probably is, and if it isn't, I'd like to hear so that I can go about fixing
+it so that it is.
+
+Please, don't put blind faith in security.  Not with TOM, not with anything
+else.
+
+
+

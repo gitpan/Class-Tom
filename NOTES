@@ -1,0 +1,33 @@
+If you require multiple objects of the same class, rather than downloading a
+whole new container, you can:
+
+	my $newobject = $tom->get_object();
+
+Which provides will return an object identical to that which 
+$tom->register() returns.
+
+If you'd like an 'out-of-the-box' object, a constructer should live within
+the contained class.
+---
+The class is registered into the correct namespace in the following order:
+
+		BEGIN() - is executed
+		main() - is executed
+		* all other functions/methods are defined.
+		import() - is executed
+		object is recreated
+
+This order is the same in Safe compartments also.  Notice it DOES NOT EVER
+RUN AN END BLOCK!.
+
+---
+If you'd like more debug info, you can set the debug level to a number
+higher than one (1), and Tom will generate some additional information for
+you.  Not much, but a little.
+---
+I'm considering ways to get around the dynamic loading problem.  I'm
+thinking quite strongly about the bytecode backend, and the byteload_string
+method.  Perhaps classes could be forced into bytecode and stored in the Tom
+container.  Of course, this would increase the size of the container, but
+perhaps the benefits would outweigh the problems.
+ 
