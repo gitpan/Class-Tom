@@ -1,115 +1,20 @@
-#!/usr/bin/perl
+# Before `make install' is performed this script should be runnable with
+# `make test'. After `make install' it should work as `perl test.pl'
 
-##
-# Simple test suite for Class::Tom.
-# James Duncan <jduncan@hawk.igs.net>
-# Updated by Steve Purkis <spurkis@engsoc.carleton.ca>
-##
+######################### We start with some black magic to print on failure.
 
-use Data::Dumper;
+# Change 1..1 below to 1..last_test_to_print .
+# (It may become useful if the test is moved to ./t subdirectory.)
 
-
-BEGIN {
-#	$DEBUG=1;	# uncomment for verbose output
-
-	$| = 1;
-	$max = 14;
-	sub ok  { $passd++; $i++; print "ok", @_, "\n"; }
-	sub nok { $faild++; $i++; print "failed", @_, "\n"; }
-}
-END {
-	print "Fatal: I couldn't load Class:\:Tom!\n" unless $loaded;
-	print "\nRan $i of $max possible tests.\n";
-	print "\tpassed: $passd  failed: $faild\t", 100*$passd/$i, "\% OK\n\n";
-}
-
-print "load........";
-eval { use Class::Tom qw ( repair cc ); };
+BEGIN { $| = 1; print "1..1\n"; }
+END {print "not ok 1\n" unless $loaded;}
+use Class::Tom;
 $loaded = 1;
-ok;
+print "ok 1\n";
 
-Class::Tom::debug(1) if $DEBUG;		# increase Tom's output
+######################### End of black magic.
 
-print "new.........";
-my $obj = new Class::Tom Class => 'TestSuite';
-(ref($obj) eq 'Class::Tom') ? ok : nok;
+# Insert your test code below (better if it prints "ok 13"
+# (correspondingly "not ok 13") depending on the success of chunk 13
+# of the test code):
 
-print "declare.....";
-$obj->declare(Name => 'Useless', Code => '{ 1; }');
-(exists $obj->{Useless}) ? ok : nok;
-
-print "class.......";
-($obj->class() eq 'TestSuite') ? ok : nok;
-
-print "methods.....";
-my @methods = $obj->methods();
-($methods[0] eq 'Useless') ? ok : nok;
-
-print "checksum....";
-($obj->checksum() ne '') ? ok : nok;
-
-{
-	print "store.......";
-	local $tmp = $obj->store();
-	($tmp) ? ok : nok;
-
-	print "repair......";
-	local $newobj = repair($tmp);
-	(ref($newobj) eq 'Class::Tom') ? ok : nok;
-	print "Repaired object's class was [" . ref($newobj) . "].\n" if $DEBUG;
-
-	print "insert......";
-	local $me = bless {}, "TestSuite";
-	($newobj->insert($me)) ? ok : nok;
-
-	print "get_object..";
-	local $em = $newobj->get_object();
-	(ref($em) eq ref($me)) ? ok : nok;
-}
-
-print "register....";
-$obj->register();
-(TestSuite::Useless()) ? ok : nok;
-
-print "cleanup.....";
-$obj->cleanup();
-print STDERR " [ Note: cleanup() is broken - don't use it! ] ";
-(1) ? ok : nok;
-# (! TestSuite::Useless()) ? ok : nok;	# this fails!!
-
-print "cc..........";
-my $testcc;
-{
-	open TST, 'test.tom';
-	local $/ = undef;
-	$testcc = <TST>;
-	close TST;
-}
-($tom2) = cc($testcc);
-(ref($tom2) eq 'Class::Tom') ? ok : nok;
-
-
-# do everything over in Safe.
-
-print "put_object..";
-print STDERR " [ Not implemented yet ] ";
-(1) ? ok : nok;
-
-
-
-__END__
-
-write tests for:
-	new      - done
-	class    - done
-	methods  - done
-	checksum - done
-	insert   - done
-	declare  - done
-	register - done
-	store    - done
-	repair   - done
-	get_object - done
-	put_object - .
-	cc       - .
-	cleanup  - .
