@@ -1,0 +1,37 @@
+Class::Tom 3.02
+---------------
+This is the second release of Class::Tom in the 3.00 series.  The 3.00 series 
+is a complete rewrite of the module, and allows me to put some things into
+place that should have gone into place a long time ago.
+
+The API has been cleaned up,  and some pretty serious modifications as to
+how Class::Tom works at a base level have occurred.
+
+The biggest change of all is how a TOM object gets the code of a method.
+By using B::Deparse and some hackery in the background, Tom now gets the
+code of any subroutine directly from the perl interpreter itself.
+However, one should note that while I have not encountered any problems
+with B::Deparse,  there may be problems with it.
+
+If you wish to submit bug reports regarding Class::Tom, or even make a
+couple of suggestions, then you should probably send them to the
+perl5-agents mailing list:
+
+  perl5-agents@daft.com
+
+To subscribe to the list, simply send mail to
+perl5-agents-request@daft.com, with the words:
+
+	subscribe <emailaddr>
+
+in the body of the message.
+
+Class::Tom is released under the same terms as perl itself.
+
+
+Regards,
+James
+
+--
+j@mesduncan.co.uk
+

@@ -40,7 +40,7 @@ use Digest::MD5 qw ( md5_hex );
 use Devel::Symdump;
 
 @EXPORT_OK  = qw ( restore );
-$VERSION = '3.01';
+$VERSION = '3.02';
 
 =item new
 

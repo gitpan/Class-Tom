@@ -1,8 +1,8 @@
-Deparse.pm.gz
 MANIFEST
 Makefile.PL
 Tom.pm
 Tom/Code.pm
 Tom/Encode.pm
 Tom/Encode/Base64.pm
-test.pl
+README
+
