@@ -11,8 +11,9 @@ use Carp;
 use Data::Dumper;
 use UNIVERSAL;
 
-$VERSION = '2.03';
-$SUBVERSION = 'Final';
+$VERSION = '2.04';
+$SUBVERSION = 'AlphaFive';
+$PATCHLEVEL = '00';		# spurkis@engsoc.carleton.ca
 
 $Class::Tom::debug = 0;
 
@@ -27,6 +28,13 @@ BEGIN {
 			print "\nThis is what is a problem.  I'm going to die\n";
 			$Class::Tom::die = 1;
 		}
+	}
+	eval "use MIME::Base64";
+	if ($@) {
+		$Class::Tom::base64 = 'False';
+		print "Skipping Base64 Encoding support (install MIME::Base64\n";
+	} else {
+		$Class::Tom::base64 = 'True';
 	}
 }
 
@@ -57,16 +65,24 @@ sub new {
 sub declare {
 	my $self = shift;
 	my %args = @_;
+	my $cpt  = $args{Compartment};	# use Safe Compartment?
 	print "Declaring $self->{Class}::$args{Name}\n" if $Class::Tom::debug;
 	$self->{$args{Name}} = $args{Code};
 	$self->{Functions}[$self->{FunctionCnt}] = $args{Name};
-	eval "package $self->{Class}; sub $self->{Class}::$args{Name} $args{Code}";
+	($cpt)
+	   ? $cpt->reval("package $self->{Class}; sub $self->{Class}::$args{Name} $args{Code}")
+	   : eval "package $self->{Class}; sub $self->{Class}::$args{Name} $args{Code}";
 	$self->{FunctionCnt}++;
 }
 
 sub class {
 	my $self = shift;
 	return $self->{Class}
+}
+
+sub methods {
+	my $self = shift;
+	return @{$self->{Functions}};
 }
 
 sub get_object {
@@ -77,6 +93,25 @@ sub get_object {
 		return eval ${$self->{Object}}[$index];
 	}
 	return eval $self->{Object};
+}
+
+# puts contained object into a safe compartment
+# <spurkis@engsoc.carleton.ca>
+sub put_object {
+	my $self = shift;
+	my $cpt = shift;
+	my $index = shift || 0;
+	unless (ref($cpt) eq 'Safe') {
+		warn "Error: No safe Compartment passed to put_object()!\n";
+		return;
+	}
+	my $obj = ($#{$self->{Object}} == -1)
+	   ? $self->{Object}
+	   : ${$self->{Object}}[$index];
+	$cpt->reval($obj);
+	# extract the variable name used:
+	my ($varname) = split(/\s*=/, $obj);
+	return $varname;	# returns sv_null if no object in container
 }
 
 sub main ($$) {
@@ -92,7 +127,6 @@ sub insert {
 	unless ($obj->isa($self->{Class}) || !$self->{Class}) {
 		croak("ERROR: object must be blessed into contained class");
 	}
-
 
 	if (!$self->{Class}) {
 		$self->{Class} = ref($obj);
@@ -132,39 +166,48 @@ sub register {
 	my $self = shift;
 	my %args = @_;
 	
-
 	if ($args{Compartment}) {	# do it in a safe compartment.
 
-		print "Securely registering function\n" if $Class::Tom::debug;
+		print "Securely registering $self->{Class} subs.\n" if $Class::Tom::debug;
 		my $cpt = $args{Compartment};
-
 		if ($self->{'BEGIN'}) {	# compile any begin blocks
 			$cpt->reval("package $self->{Class}; $self->{'BEGIN'}");
 			if ($@) {
-				croak("ERROR: $@");
+				warn "ERROR: $@";
+				return;
 			}
 		}
 
 		if ($self->{'main'}) {	# compile any unsubified code
 			$cpt->reval("package $self->{Class}; $self->{'main'}");
 			if ($@) {
-				croak("ERROR: $@");
+				warn "ERROR: $@";
+				return;
 			}
 		}
 
 		foreach my $fnc (@{$self->{Functions}}) { # register functions.
 			$cpt->reval("sub $self->{Class}::$fnc $self->{$fnc}");
 			if ($@) {
-				croak("ERROR: $@");
+				warn "ERROR: $@";
+				return;
 			}
 		}
 
 		if ($self->{import}) { # do the import sub
 			$cpt->reval("$self->{Class}::import();");
+			if ($@) {
+				warn "ERROR: $@";
+				return;
+			}
 		}
 
 		if ($self->{Object}) {	# autoreturn the object.
-			$cpt->reval("my $obj = eval \"$self->{Object}\"\n");
+			my $obj = $cpt->reval("\$obj = \$self->{Object}");
+			if ($@) {
+				warn "ERROR: $@";
+				return;
+			}
 		}
 
 	} else {	# do it without protection, otherwise,
@@ -173,13 +216,15 @@ sub register {
 		if ($self->{'BEGIN'}) {
 			eval "package $self->{Class}; $self->{'BEGIN'}";
 			if ($@) {
-				croak("ERROR: $@");
+				warn "ERROR: $@";
+				return;
 			}
 		}
 		if ($self->{'main'}) {
 			eval "package $self->{Class}; $self->{'main'}";
 			if ($@) {
-				croak("ERROR: $@");
+				warn "ERROR: $@";
+				return;
 			}
 		}
 		foreach my $fnc (@{$self->{Functions}}) {
@@ -207,8 +252,13 @@ sub store {
 	my ($self, %args) = @_;
 	my $class;
 	$class = $self->{Class};
-	my $top = "-- Tom $Class::Tom::VERSION ($Class::Tom::SUBVERSION) Class: $class --\n";
-	my $middle = pack("u",Dumper($self));
+	my $top = "-- Tom $Class::Tom::VERSION ($Class::Tom::SUBVERSION) Class: $class Base64: $Class::Tom::base64 --\n";
+	my $middle;
+	if ($Class::Tom::base64 eq 'True') {
+		$middle = encode_base64(Dumper($self));
+	} else {
+		$middle = pack("u",Dumper($self));
+	}
 
 	# MD5 Message Digest Authentication...
 	my $md = new MD5;
@@ -234,6 +284,7 @@ sub checksum {
 
 sub repair {
 	my $package = shift;
+	my $cpt     = shift;	# use a Safe Compartment?
 	my @code = split(/^/, $package);
 	my $top = shift @code;
 	my $declmd = shift @code;
@@ -246,7 +297,7 @@ sub repair {
 	# test for equal delimiters - check MD5 digest if they match
 	unless ($top eq $bottom) {
 		croak("ERROR: Delimiters do not match");
-		exit(1);
+		return;
 	} else {
 		my $data = join('',@code);
 
@@ -258,7 +309,17 @@ sub repair {
 		"ERROR: MD5 Digests do not match\nDiscarding container");
 		}
 		
-		my $me = eval unpack('u', $data);
+		my @delimit = split(/ /,$top);
+		my $me;
+		if ($delimit[7] eq 'True') {
+			if ($Class::Tom::base64 eq 'False') {
+				warn "ERROR: No Base64 support on this system";
+			} else {
+				$me = eval decode_base64($data);
+			}
+		} else {
+			my $me = eval unpack('u', $data);
+		}	
 		if ($@) { print "ERROR: $@\n"; exit(2) }
 		if ($Class::Tom::debug > 1) {
 			print("Object:\n" , ref($me));
@@ -278,6 +339,11 @@ sub debug {
 
 sub cc {
 	my $code = shift;
+	my $cpt  = shift;	# use a Safe Compartment?
+	if (($cpt) && (ref($cpt) ne 'Safe')) {
+		warn "CC: Not a Safe Compartment!\n";
+		undef $cpt;
+	}
 	my @first = split(/^/, $code);
 	my (@second,@final,@classes,$skip,$cnt,$classcnt,%classhash);
 	my $ccline = 1;
@@ -332,7 +398,8 @@ sub cc {
 				$subcatch = 0;
 				$classes[$classhash{$classname}]->declare(
 					Name => $funcname,
-					Code => '{' . $caught . '}'
+					Code => '{' . $caught . '}',
+					Compartment => $cpt
 				);
 				print "Adding method $funcname, resetting cache\n" if $Class::Tom::debug;
 				$caught = ''; 
@@ -487,6 +554,17 @@ C<get_object> returns the object stored within the container, but doesn't
 register the class on the local machine, which will cause problems unless
 you have already used the C<register> method. 
 
+Where multiple objects are concerned, an optional index of the object to
+extract can be passed.  -spurkis
+
+=head1 put_object
+
+C<put_object> functions as above, but instead puts the stored object into a
+I<Safe> Compartment and returns the variable name it used to do so (e.g.
+'$VAR1').  It takes two arguments: a compulsory reference to the I<Safe>
+Compartment to be used, and where multiple objects are concerned, an optional
+index of the object to extract.  -spurkis
+
 =head1 store
 
 C<store> returns a transportable version of the TOM container.  It no longer
@@ -494,8 +572,18 @@ cleans the namespace before continuing.
 
 =head1 repair
 
-C<repair> takes one argument. This argument is a TOM container that has
-been C<store>'ed.  It returns a Perl object that is the TOM container.
+C<repair> now takes two arguments.  The first is a TOM container that has
+been C<store>'ed, the second is a Safe Compartment in case you're paranoid
+of hand-crafted attacks.  You should be - afterall, everyone's out to get
+you.  It returns a Perl object that is the TOM container.
+
+=head1 cc
+
+C<cc> takes two options: a scalar containing plaintext Perl code, and an
+optional reference to a I<Safe> compartment.  cc() tries to parse code and
+create Tom objects.  If it succeeds, it returns a list of Tom containers.
+If a Safe compartment is passed all code is registered in that compartment,
+otherwise it is eval()d.  -spurkis
 
 =head1 debug
 
@@ -505,6 +593,11 @@ C<debug> sets the debug level for TOM.  Used for development.
 
 C<cleanup> deletes the functions registered from the TOM container into a
 namespace, preventing problems in the case of TOM execution servers. 
+
+Please note: as of release 2.04 this function appears broken.  It will try
+to delete the namespace of a class matching that in the Tom container I<even
+if> it has not been registered.  -spurkis
+
 
 =head1 methods
 

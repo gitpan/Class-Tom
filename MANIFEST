@@ -4,7 +4,7 @@ INSTALL				Installation Instructions
 MANIFEST			This file
 Makefile.PL			MakeMaker file
 README				Please do so
-Class/Tom.pm			Basic module
+Tom.pm				Basic module
 test.pl				Test suite
 NOTES				Some hints for use and notes to myself
 SECURITY			A bit of a document outlining TOM's security.

@@ -1,6 +1,6 @@
   	     Transportable Object Model (TOM) Kit for Perl
 
-			     Version 2.02
+			     Version 2.04
 
 			   ( Final Release )
 
@@ -28,20 +28,17 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-TOM Kit, Version 2.02 (Final Release)
------------------------------
+TOM Kit, Version 2.04 (AlphaThree)
+----------------------------------
 TOM allows you contain objects within a TOM object.  This TOM object can
 then be flattened into a general container which can be passed from machine
 to machine.  The objects stored inside the container can be used on any
 machine with both Perl and Tom installed.
 
-TOM has now been uploaded to CPAN, and some changes have been made because
-of this.   It is now known as Class::Tom.  This is mainly to preserve
-registered top-level heirarchies.
-
-TOM is first updated at it's web page, which is located at
-http://www.hawk.igs.net/~jduncan/Tom.  Info about upcoming releases, bug
-fixes, etc can be found there.  
+This release of Tom pulls a couple of things together that haven't been
+entirely solid.  Safe, Agent, and Tom now work together far better than
+before.  The Makefile.PL has also been fixed since 2.03, which allows people
+to actually install the module.
 
 If you find a bug please don't hesitate to fix and send the patch to me :-)
 If you just let me know where the bug crops up however, it should be plenty
