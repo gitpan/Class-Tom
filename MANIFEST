@@ -5,8 +5,6 @@ MANIFEST			This file
 Makefile.PL			MakeMaker file
 README				Please do so
 Class/Tom.pm			Basic module
-Class/Tom/demand.pm		require like demand statement.
-Class/Tom/use.pm		provides a 'use' like module
 test.pl				Test suite
 NOTES				Some hints for use and notes to myself
 SECURITY			A bit of a document outlining TOM's security.

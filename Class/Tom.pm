@@ -1,19 +1,23 @@
 package Class::Tom;
 
-require 5.004;  	# this can be turned off with very little modification to
-			# the module.
+require 5.004;  	
 
-use Carp;		# for warnings
-BEGIN { $^W = 0; }	# Force Warnings off - stop warns about other
-			# peoples sillycode.
+use Exporter;
+@ISA = qw ( Exporter );
+@EXPORT_OK = qw ( repair cc );
 
-# Mechanism modules
-use Data::Dumper;	# Storage Mechanism
+use Carp;
 
-use UNIVERSAL;		# Used to make sure the object is nice enough to
-			# belong to the same class as that contained.
+use Data::Dumper;
+use UNIVERSAL;
 
-BEGIN {	# 'magical' support for both versions of MD5 that I know of.
+$VERSION = '2.03';
+$SUBVERSION = 'Final';
+
+$Class::Tom::debug = 0;
+
+BEGIN {	
+	$^W = 0;
 	eval "use Crypt::MD5";
 	if ($@) {
 		eval "use MD5";
@@ -26,37 +30,12 @@ BEGIN {	# 'magical' support for both versions of MD5 that I know of.
 	}
 }
 
-BEGIN { # magical 'do-it-if-you-got-it' support for Protect. 
-	eval "use protect";
-	if ($@) {
-		$Class::Tom::noprotect = 1;
-	}
-}
-
 
 if ($Class::Tom::die) {
 	exit(1);
 }
 
-# Exporter stuff
-use Exporter;
-@ISA = qw ( Exporter );
-@EXPORT_OK = qw ( repair cc );
-
-$VERSION = '2.02';
-$SUBVERSION = 'Final';
-
-# Debug variable
-$Class::Tom::debug = 0;
-
-#################################################### PRIVATE FUNCTIONS ######
-
-# Registers the functions within the defined Perl package.
 sub domagic {
-	unless ($Class::Tom::noprotect) {
-		is private;
-	}
-
 	my $self = shift;
 	my $fnc  = shift;
 	eval "package $self->{Class}; sub $self->{Class}::$fnc $self->{$fnc}";
@@ -65,11 +44,7 @@ sub domagic {
 	} else { return 1 }
 }
 
-################################################### PUBLIC FUNCTIONS ########
-
-# Constructor
 sub new {
-	is public;
 	my ($class, %args) = @_;
 	my $self = {};
 
@@ -79,7 +54,6 @@ sub new {
 	bless $self, $class;
 }
 
-# insert a function into the Class::Tom package
 sub declare {
 	my $self = shift;
 	my %args = @_;
@@ -90,29 +64,26 @@ sub declare {
 	$self->{FunctionCnt}++;
 }
 
-
-# returns the class that the container holds.
 sub class {
 	my $self = shift;
 	return $self->{Class}
 }
 
-# allows you to get a new instance of any stored expression from the Class::Tom
-# container.
 sub get_object {
 	my $self = shift;
-	my %args = @_;
+	my $index= shift;
+
+	unless ($#{$self->{Object}} == -1) {
+		return eval ${$self->{Object}}[$index];
+	}
 	return eval $self->{Object};
 }
 
-# allows you to insert code into the 'main' compartment of the Class::Tom
-# container.  Shouldn't be used really....
 sub main ($$) {
 	my $self = shift;
 	$self->{'main'} = shift;
 }
 
-# push an object into the Class::Tom container.
 sub insert {
 	my $self = shift;	# Class::Tom object.
 	my $obj = shift;	# object to insert.
@@ -127,8 +98,6 @@ sub insert {
 		$self->{Class} = ref($obj);
 	}
 	
-	# attempt to compile a module into Class::Tom if no functions have been
-	# defined.  Perhaps remove this wizardry?
 	if ($self->{FunctionCnt} == 0) {
 		my $module = ref($obj);
 		print STDERR "Attempting to compile Class::Tom Class $module\n" if $Class::Tom::debug;
@@ -159,7 +128,6 @@ sub insert {
 	}
 }
 
-# compile subs out of the Class::Tom container.
 sub register {
 	my $self = shift;
 	my %args = @_;
@@ -250,14 +218,9 @@ sub store {
 	$digest .= "\n";
 	my $package = $top . $digest . $middle . $top;
 
-	# this effectively deletes the object's class, but if the user wants
-	# to keep using the object... not good.
- #	$self->cleanup();
-
 	return $package;
 }
 
-# Checksum package.
 sub checksum {
  	my $self = shift;
  
@@ -269,7 +232,6 @@ sub checksum {
  	return $md->hexdigest();
 }
 
-# repairs the stored Tom container back into a real Tom container
 sub repair {
 	my $package = shift;
 	my @code = split(/^/, $package);
@@ -314,8 +276,6 @@ sub debug {
 	$Class::Tom::debug = shift;
 }
 
-# WARNING, bad code, heavy wizardry.
-# This is a complete hack to convert perl modules into Class::Tom containers.
 sub cc {
 	my $code = shift;
 	my @first = split(/^/, $code);

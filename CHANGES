@@ -1,3 +1,10 @@
+Changes since 2.02
+------------------
++ Have honestly, really removed requirement for protect.
++ Fixed bugs with the automagic insert (thanks spurkis@evilpeople.ml.org) 
++ I have removed demand and use.  If there is a demand for them, then they
+  will reappear, but not otherwise.
+
 Changes since 2.01
 ------------------
 + Altered Makefile.PL namespace

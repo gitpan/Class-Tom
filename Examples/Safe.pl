@@ -18,7 +18,7 @@ my $tom = repair ( $stored );
 
 # create the safe compartment in which the code will thrive (hopefully)
 my $comp = new Safe;
-
+$comp->permit( time );
 # register functions inside the safe compartment.
 $tom->register ( Compartment => $comp );
 
